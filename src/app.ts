@@ -31,8 +31,9 @@ let config = require("config");
 import * as botbuilder from "botbuilder";
 import * as msteams from "botbuilder-teams";
 import * as winston from "winston";
-import { HelperBot } from "./HelperBot";
 import * as utils from "./utils";
+import { HelperBot } from "./HelperBot";
+import { MemoryTenantStore } from "./TenantStore";
 
 let app = express();
 
@@ -48,6 +49,7 @@ let connector = new msteams.TeamsChatConnector({
 });
 let botSettings = {
     storage: new botbuilder.MemoryBotStorage(),
+    tenantStore: new MemoryTenantStore(),
 };
 let bot = new HelperBot(connector, botSettings);
 bot.on("error", (error: Error) => {

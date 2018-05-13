@@ -25,6 +25,7 @@ import * as builder from "botbuilder";
 import * as msteams from "botbuilder-teams";
 import * as consts from "./constants";
 import * as utils from "./utils";
+import { ITenantStore, TenantData } from "./TenantStore";
 
 // =========================================================
 // HelperBot Bot
@@ -32,12 +33,17 @@ import * as utils from "./utils";
 
 export class HelperBot extends builder.UniversalBot {
 
+    private tenantStore: ITenantStore;
+
     constructor(
         public _connector: builder.IConnector,
         private botSettings: any,
     )
     {
         super(_connector, botSettings);
+
+        this.tenantStore = botSettings.tenantStore as ITenantStore;
+
         this.dialog(consts.DialogId.Root, this.handleMessage.bind(this));
         this.on("conversationUpdate", this.handleConversationUpdate.bind(this));
     }
@@ -49,6 +55,18 @@ export class HelperBot extends builder.UniversalBot {
 
     // Handle incoming conversation updates
     private async handleConversationUpdate(event: builder.IConversationUpdate) {
-        console.log(JSON.stringify(event));
+
+        // Save the mapping from tenant id to the service url for that tenant
+        // To keep it simple, we do it for all incoming events. You may want to do it less frequently,
+        // as the service url is stable for a tenant. 
+        const tenantId = utils.getTenantId(event);
+        if (tenantId) {
+            const address = event.address as builder.IChatConnectorAddress;
+            const serviceUrl = address.serviceUrl;
+            if (serviceUrl) {
+                await this.tenantStore.saveData(tenantId, { serviceUrl: serviceUrl });
+            }
+        }
+
     }
 }
