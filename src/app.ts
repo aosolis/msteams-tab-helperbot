@@ -34,7 +34,7 @@ import * as winston from "winston";
 import * as utils from "./utils";
 import { HelperBot } from "./HelperBot";
 import { MemoryTenantStore } from "./TenantStore";
-import { GetGroupMembersApi } from "./GetGroupMembersApi";
+import { GetTeamMembersApi } from "./GetTeamMembersApi";
 
 const app = express();
 
@@ -66,8 +66,8 @@ app.get("/ping", (req, res) => {
 });
 
 // API routes
-const getGroupMembersApi = new GetGroupMembersApi(connector, tenantStore);
-app.get("/api/GetGroupMembers", getGroupMembersApi.listen());
+const getTeamMembersApi = new GetTeamMembersApi(connector, tenantStore);
+app.get("/api/getTeamMembers", getTeamMembersApi.listen());
 
 // error handlers
 
