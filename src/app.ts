@@ -21,37 +21,40 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-let express = require("express");
+const express = require("express");
 import { Request, Response } from "express";
-let bodyParser = require("body-parser");
-let http = require("http");
-let path = require("path");
-let logger = require("morgan");
-let config = require("config");
+const bodyParser = require("body-parser");
+const http = require("http");
+const path = require("path");
+const logger = require("morgan");
+const config = require("config");
 import * as botbuilder from "botbuilder";
 import * as msteams from "botbuilder-teams";
 import * as winston from "winston";
 import * as utils from "./utils";
 import { HelperBot } from "./HelperBot";
 import { MemoryTenantStore } from "./TenantStore";
+import { GetGroupMembersApi } from "./GetGroupMembersApi";
 
-let app = express();
+const app = express();
 
 app.set("port", process.env.PORT || 3978);
 app.use(logger("dev"));
 app.use(express.static(path.join(__dirname, "../../public")));
 app.use(bodyParser.json());
 
-// Create caption bot
-let connector = new msteams.TeamsChatConnector({
+const tenantStore = new MemoryTenantStore();
+
+// Configure bot
+const connector = new msteams.TeamsChatConnector({
     appId: config.get("bot.appId"),
     appPassword: config.get("bot.appPassword"),
 });
-let botSettings = {
+const botSettings = {
     storage: new botbuilder.MemoryBotStorage(),
-    tenantStore: new MemoryTenantStore(),
+    tenantStore: tenantStore,
 };
-let bot = new HelperBot(connector, botSettings);
+const bot = new HelperBot(connector, botSettings);
 bot.on("error", (error: Error) => {
     winston.error(error.message, error);
 });
@@ -61,6 +64,10 @@ app.post("/api/messages", connector.listen());
 app.get("/ping", (req, res) => {
     res.status(200).send("OK");
 });
+
+// API routes
+const getGroupMembersApi = new GetGroupMembersApi(connector, tenantStore);
+app.get("/api/GetGroupMembers", getGroupMembersApi.listen());
 
 // error handlers
 
