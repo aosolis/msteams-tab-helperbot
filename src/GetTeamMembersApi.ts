@@ -71,28 +71,10 @@ export class GetTeamMembersApi {
                 // If we have a service url for the tenant use it directly
                 teamMembers = await this.fetchTeamMembers(tenantData.serviceUrl, teamId);
             } else {
-                // Otherwise, cycle through the known service urls
-                for (let i = 0; i < knownServiceUrls.length; i++) {
-                    try {
-                        teamMembers = await this.fetchTeamMembers(knownServiceUrls[i], teamId);
-
-                        // Success, we found the correct service url! Store it and end the iteration.
-                        await this.tenantStore.saveData(tenantId, { serviceUrl: knownServiceUrls[i] });
-                        break;
-                    } catch (e) {
-                        // If we get a 404, we are hitting the wrong region -- try the next one
-                        if (e.statusCode && (e.statusCode === 404)) {
-                            continue;
-                        } else {
-                            this.returnErrorResponse(res, e.statusCode, "Failed to get team members.");
-                            return;
-                        }
-                    }
-                }
-
-                // We couldn't find the correct service URL
+                teamMembers = await this.findServiceUrlAndFetchTeamMembers(tenantId, teamId);
                 if (!teamMembers) {
-                    this.returnErrorResponse(res, 500, "Failed to find the correct service url.");
+                    // We couldn't find the correct service URL
+                    this.returnErrorResponse(res, 404, "Failed to find the correct service url.");
                     return;
                 }
             }
@@ -106,10 +88,10 @@ export class GetTeamMembersApi {
         }
 
         // Check that the user is a member of the team
-        let lowerCaseUpn = upn.toLowerCase();
+        const lowerCaseUpn = upn.toLowerCase();
         if (!teamMembers.find(member => 
-            (member.userPrincipalName.toLowerCase() === lowerCaseUpn) || 
-            (member.email && member.email.toLowerCase() === lowerCaseUpn))) {
+                (member.userPrincipalName.toLowerCase() === lowerCaseUpn) || 
+                (member.email && member.email.toLowerCase() === lowerCaseUpn))) {
             this.returnErrorResponse(res, 403, "User must be a member of the team.");
             return;
         }
@@ -131,10 +113,33 @@ export class GetTeamMembersApi {
         });
     }
 
+    private async findServiceUrlAndFetchTeamMembers(tenantId: string, teamId: string): Promise<msteams.ChannelAccount[]> {
+        // Cycle through the known service urls
+        for (let i = 0; i < knownServiceUrls.length; i++) {
+            try {
+                const teamMembers = await this.fetchTeamMembers(knownServiceUrls[i], teamId);
+
+                // Success, we found the correct service url! Store it and end the iteration.
+                await this.tenantStore.saveData(tenantId, { serviceUrl: knownServiceUrls[i] });
+                return teamMembers;
+            } catch (e) {
+                // If we get a 404, we are hitting the wrong region -- try the next one
+                if (e.statusCode && (e.statusCode === 404)) {
+                    continue;
+                } else {
+                    throw e;
+                }
+            }
+        }
+
+        // Couldn't find the right service url
+        return null;
+    }
+
     private returnErrorResponse(res: express.Response, statusCode: number, message: string) {
         const body = {
             statusCode: statusCode,
-            message: "Failed to get team members.",
+            message: message,
         };
         res.status(500).json(body);
     }
