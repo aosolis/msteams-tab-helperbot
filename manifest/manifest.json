@@ -23,12 +23,6 @@
   },
   "accentColor": "#1267AE",
   "configurableTabs": [
-    {
-      "configurationUrl": "https://12bb4b22.ngrok.io/tab/config",
-      "scopes": [
-        "team"
-      ]
-    }
   ],
   "staticTabs": [
   ],
