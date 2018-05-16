@@ -28,7 +28,7 @@
   ],
   "bots": [
     {
-      "botId": "8337979f-b2da-408f-969b-f6abc6cfcebd",
+      "botId": "<<your bot id here>>",
       "scopes": [
         "team"
       ],
@@ -40,7 +40,6 @@
   "permissions": [
   ],
   "validDomains": [
-    "visionsample-msteams.azurewebsites.net",
     "*.ngrok.io"
   ]
 }
